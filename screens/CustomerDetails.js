@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { collection, getDocs, doc, deleteDoc} from 'firebase/firestore';
+import { FIREBASE_DB } from '../FirebaseConfig'; // Firebase config file
 
 const CustomerDetails = () => {
   const navigation = useNavigation();
@@ -9,30 +11,35 @@ const CustomerDetails = () => {
   const { id } = route.params; // Get the customer ID passed from ManageCustomers
 
   const [customer, setCustomer] = useState(null);
+  const [loading, setLoading] = useState(true); // Add loading state
 
   useEffect(() => {
-    // Fetch customer details based on the ID (this is just an example, you would replace it with actual data fetching)
-    const fetchedCustomer = {
-      id: '1',
-      name: 'John Doe',
-      age: '28',
-      gender: 'Male',
-      mobile: '123-456-7890',
-      profileImage: null,
-      email: 'johndoe@example.com',
-      address: '1234 Main St, Springfield, IL',
-      joiningDate: '2023-05-15',
+    const fetchCustomerDetails = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(FIREBASE_DB, 'customers'));
+        const customers = [];
+        querySnapshot.forEach((doc) => {
+          if (doc.id === id) {
+            customers.push({ id: doc.id, ...doc.data() });
+          }
+        });
+        if (customers.length > 0) {
+          setCustomer(customers[0]);
+        } else {
+          Alert.alert('Error', 'Customer not found');
+        }
+      } catch (error) {
+        console.error('Error fetching customer details: ', error);
+        Alert.alert('Error', 'Failed to fetch customer details');
+      } finally {
+        setLoading(false); // Set loading to false after the data is fetched
+      }
     };
-
-    if (id === '1') {
-      setCustomer(fetchedCustomer);
-    } else if (id === '2') {
-      setCustomer({ ...fetchedCustomer, id: '2', name: 'Jane Smith', gender: 'Female' }); // Example for another customer
-    }
-    // Add logic to handle real API request based on ID
+  
+    fetchCustomerDetails();
   }, [id]);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this customer?',
@@ -41,18 +48,33 @@ const CustomerDetails = () => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            // Perform delete operation (API integration needed)
-            console.log(`Customer with ID ${id} deleted.`);
-            navigation.goBack(); // Navigate back after deletion
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(FIREBASE_DB, 'customers', id));
+              console.log(`Customer with ID ${id} deleted.`);
+              navigation.goBack(); // Navigate back after deletion
+            } catch (error) {
+              console.error('Error deleting customer: ', error);
+              Alert.alert('Error', 'Failed to delete customer');
+            }
           },
         },
       ]
     );
   };
 
+  if (loading) {
+    // Show loading spinner while data is being fetched
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4B6CB7" />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
   if (!customer) {
-    return <Text>Loading...</Text>;
+    return <Text style={styles.errorText}>Customer not found</Text>;
   }
 
   return (
@@ -74,11 +96,11 @@ const CustomerDetails = () => {
           {customer.profileImage ? (
             <Image source={{ uri: customer.profileImage }} style={styles.profileImage} />
           ) : (
-            <FontAwesome name="user-circle" size={100} color="#888" />
+            <FontAwesome name="user-circle" size={100} color="#9EBCD4" />
           )}
         </View>
         <View style={styles.infoContainer}>
-          <Text style={styles.name}>{customer.name}</Text>
+          <Text style={styles.name}>Name: {customer.customerName}</Text>
           <Text style={styles.details}>Age: {customer.age}</Text>
           <Text style={styles.details}>Gender: {customer.gender}</Text>
           <Text style={styles.details}>Mobile: {customer.mobile}</Text>
@@ -187,6 +209,23 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F8F8',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 18,
+    color: '#555',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#D9534F',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
 

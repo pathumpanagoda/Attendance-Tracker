@@ -10,36 +10,48 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { collection, getDocs } from 'firebase/firestore';
+import { FIREBASE_DB } from '../FirebaseConfig'; // Firebase config file
 
 const ManageCustomers = () => {
   const navigation = useNavigation();
-
-  const [customers, setCustomers] = useState([
-    // Example customers data
-    { id: '1', name: 'John Doe', age: '28', mobile: '123-456-7890', profileImage: null },
-    { id: '2', name: 'Jane Smith', age: '34', mobile: '987-654-3210', profileImage: null },
-    // Add more example customers as needed
-  ]);
+  const [customers, setCustomers] = useState([]);
   const [searchText, setSearchText] = useState('');
-  const [filteredCustomers, setFilteredCustomers] = useState(customers);
+  const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(FIREBASE_DB, 'customers'));
+        const customersList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setCustomers(customersList);
+        setFilteredCustomers(customersList);
+      } catch (error) {
+        console.error("Error fetching customers: ", error);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   useEffect(() => {
     // Filter customers based on search text
     const filtered = customers.filter((customer) =>
-      customer.name.toLowerCase().includes(searchText.toLowerCase())
+      customer.customerName.toLowerCase().includes(searchText.toLowerCase())
     );
     setFilteredCustomers(filtered);
   }, [searchText, customers]);
 
-
-
   const handleSort = () => {
     const sortedCustomers = [...filteredCustomers].sort((a, b) => {
       if (sortOrder === 'asc') {
-        return a.name.localeCompare(b.name);
+        return a.customerName.localeCompare(b.customerName);
       } else {
-        return b.name.localeCompare(a.name);
+        return b.customerName.localeCompare(a.customerName);
       }
     });
     setFilteredCustomers(sortedCustomers);
@@ -56,7 +68,7 @@ const ManageCustomers = () => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <FontAwesome name="arrow-left" size={24} color="#4B6CB7" /> 
+            <FontAwesome name="arrow-left" size={24} color="#4B6CB7" />
           </TouchableOpacity>
 
           <Text style={styles.title}>Customers</Text>
@@ -66,49 +78,52 @@ const ManageCustomers = () => {
           </Text>
         </View>
 
-        {/* Search Bar */}
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by Name"
-          value={searchText}
-          onChangeText={setSearchText}
-        />
-
-        {/* Sort Button */}
-        <TouchableOpacity style={styles.sortButton} onPress={handleSort}>
-          <Text style={styles.sortButtonText}>
-            Sort by Name ({sortOrder === 'asc' ? 'Ascending' : 'Descending'})
-          </Text>
-        </TouchableOpacity>
+        {/* Search Bar and Sort Icon */}
+        <View style={styles.searchSortContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by Name"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+          <TouchableOpacity onPress={handleSort}>
+            <FontAwesome
+              name={sortOrder === 'asc' ? 'sort-alpha-asc' : 'sort-alpha-desc'}
+              size={24}
+              color="#4B6CB7"
+              style={styles.sortIcon}
+            />
+          </TouchableOpacity>
         </View>
-        {/* Customers List */}
-        <FlatList
-          data={filteredCustomers}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.customerCard}
-              onPress={() => navigation.navigate('CustomerDetails', { id: item.id })}
-            >
-              <View style={styles.customerInfo}>
-                <View style={styles.imageContainer}>
-                  {item.profileImage ? (
-                    <Image source={{ uri: item.profileImage }} style={styles.profileImage} />
-                  ) : (
-                    <FontAwesome name="user-circle" size={40} color="#888" />
-                  )}
-                </View>
-                <View style={styles.textInfo}>
-                  <Text style={styles.customerName}>{item.name}</Text>
-                  <Text style={styles.customerDetails}>{item.age} years old</Text>
-                  <Text style={styles.customerDetails}>{item.mobile}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
       </View>
-    
+
+      {/* Customers List */}
+      <FlatList
+        data={filteredCustomers}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.customerCard}
+            onPress={() => navigation.navigate('CustomerDetails', { id: item.id })}
+          >
+            <View style={styles.customerInfo}>
+              <View style={styles.imageContainer}>
+                {item.profileImage ? (
+                  <Image source={{ uri: item.profileImage }} style={styles.profileImage} />
+                ) : (
+                  <FontAwesome name="user-circle" size={50} color="#9EBCD4" />
+                )}
+              </View>
+              <View style={styles.textInfo}>
+                <Text style={styles.customerName}>{item.customerName}</Text>
+                <Text style={styles.customerDetails}>{item.age} years old</Text>
+                <Text style={styles.customerDetails}>{item.mobile}</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 };
 
@@ -139,11 +154,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  backButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    color: '#555',
-  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
@@ -153,6 +163,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
   },
+  searchSortContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   searchInput: {
     backgroundColor: '#FFF',
     padding: 10,
@@ -160,26 +175,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#DDD',
+    flex: 1,
   },
-  sortButton: {
-    backgroundColor: '#4B6CB7',
-    padding: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  sortButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
-    fontSize: 16,
+  sortIcon: {
+    marginLeft: 10,
+    marginTop: -20,
   },
   customerCard: {
     backgroundColor: '#FFF',
+    padding: 15,
+    marginBottom: 2,
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 5,
-    borderWidth: 1,
-    borderColor: '#DDD',
-    marginHorizontal: 5,
   },
   customerInfo: {
     flexDirection: 'row',
@@ -189,9 +195,9 @@ const styles = StyleSheet.create({
     marginRight: 15,
   },
   profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
   },
   textInfo: {
     flex: 1,
@@ -201,7 +207,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   customerDetails: {
-    color: '#555',
+    fontSize: 14,
+    color: '#888',
   },
 });
 

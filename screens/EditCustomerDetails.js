@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Picker } from '@react-native-picker/picker';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Picker } from "@react-native-picker/picker";
+import { Formik } from "formik";
+import * as Yup from "yup";
+import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { FIREBASE_DB } from "../FirebaseConfig"; // Firebase config file
 
 const EditCustomerDetails = () => {
   const navigation = useNavigation();
@@ -12,31 +23,42 @@ const EditCustomerDetails = () => {
   const { id } = route.params; // Get the customer ID passed from CustomerDetails
 
   const [customer, setCustomer] = useState(null);
+  const [loading, setLoading] = useState(false); // State to track loading status
 
   useEffect(() => {
-    // Fetch customer details based on the ID (replace with real API call)
-    const fetchedCustomer = {
-      id: '1',
-      name: 'John Doe',
-      age: '28',
-      gender: 'Male',
-      mobile: '123-456-7890',
-      email: 'johndoe@example.com',
-      address: '1234 Main St, Springfield, IL',
-      joiningDate: '2022-01-15',
+    const fetchCustomerDetails = async () => {
+      try {
+        const customerDoc = await getDocs(collection(FIREBASE_DB, "customers"));
+        const customerData = customerDoc.docs.find((doc) => doc.id === id);
+        if (customerData) {
+          setCustomer({ id: customerData.id, ...customerData.data() });
+        } else {
+          Alert.alert("Error", "Customer not found");
+          navigation.goBack();
+        }
+      } catch (error) {
+        console.error("Error fetching customer details: ", error);
+        Alert.alert("Error", "Failed to fetch customer details");
+      }
     };
 
-    if (id === '1') {
-      setCustomer(fetchedCustomer);
-    }
-    // Add logic to handle real API requests
+    fetchCustomerDetails();
   }, [id]);
 
-  const handleUpdate = (values) => {
-    // Replace with your update logic (API call, etc.)
-    Alert.alert('Success', 'Customer details updated successfully!', [
-      { text: 'OK', onPress: () => navigation.goBack() },
-    ]);
+  const handleUpdate = async (values) => {
+    setLoading(true); // Set loading to true while updating
+    try {
+      const customerRef = doc(FIREBASE_DB, "customers", id);
+      await updateDoc(customerRef, values);
+      Alert.alert("Success", "Customer details updated successfully!", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
+    } catch (error) {
+      console.error("Error updating customer details: ", error);
+      Alert.alert("Error", "Failed to update customer details");
+    } finally {
+      setLoading(false); // Set loading to false after the update operation
+    }
   };
 
   if (!customer) {
@@ -44,19 +66,21 @@ const EditCustomerDetails = () => {
   }
 
   const validationSchema = Yup.object({
-    name: Yup.string().required('Name is required'),
-    age: Yup.number().required('Age is required').positive().integer(),
-    gender: Yup.string().required('Gender is required'),
-    mobile: Yup.string().required('Mobile number is required'),
-    email: Yup.string().email('Invalid email address').required('Email is required'),
-    address: Yup.string().required('Address is required'),
-    joiningDate: Yup.string().required('Joining date is required'),
+    customerName: Yup.string().required("Name is required"),
+    age: Yup.string().required("Age is required"),
+    gender: Yup.string().required("Gender is required"),
+    mobile: Yup.string().required("Mobile number is required"),
+    email: Yup.string().email("Invalid email address"),
+    address: Yup.string(),
   });
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
           <FontAwesome name="arrow-left" size={24} color="#4B6CB7" />
         </TouchableOpacity>
         <Text style={styles.title}>Edit Customer</Text>
@@ -67,34 +91,46 @@ const EditCustomerDetails = () => {
         validationSchema={validationSchema}
         onSubmit={(values) => handleUpdate(values)}
       >
-        {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+        {({
+          handleChange,
+          handleBlur,
+          handleSubmit,
+          values,
+          errors,
+          touched,
+        }) => (
           <View style={styles.formContainer}>
             <Text style={styles.label}>Name</Text>
             <TextInput
               style={styles.input}
-              onChangeText={handleChange('name')}
-              onBlur={handleBlur('name')}
-              value={values.name}
+              onChangeText={handleChange("customerName")}
+              onBlur={handleBlur("customerName")}
+              value={values.customerName}
               placeholder="Enter customer name"
             />
-            {touched.name && errors.name && <Text style={styles.error}>{errors.name}</Text>}
+            {touched.customerName && errors.customerName && (
+              <Text style={styles.error}>{errors.customerName}</Text>
+            )}
 
             <Text style={styles.label}>Age</Text>
             <TextInput
               style={styles.input}
               keyboardType="numeric"
-              onChangeText={handleChange('age')}
-              onBlur={handleBlur('age')}
-              value={values.age}
+              onChangeText={handleChange("age")}
+              onBlur={handleBlur("age")}
+              value={String(values.age)} // Ensure it is a string
               placeholder="Enter customer age"
             />
-            {touched.age && errors.age && <Text style={styles.error}>{errors.age}</Text>}
+
+            {touched.age && errors.age && (
+              <Text style={styles.error}>{errors.age}</Text>
+            )}
 
             <Text style={styles.label}>Gender</Text>
             <View style={styles.pickerContainer}>
               <Picker
                 selectedValue={values.gender}
-                onValueChange={handleChange('gender')}
+                onValueChange={handleChange("gender")}
               >
                 <Picker.Item label="Select Gender" value="" />
                 <Picker.Item label="Male" value="Male" />
@@ -102,52 +138,61 @@ const EditCustomerDetails = () => {
                 <Picker.Item label="Other" value="Other" />
               </Picker>
             </View>
-            {touched.gender && errors.gender && <Text style={styles.error}>{errors.gender}</Text>}
+            {touched.gender && errors.gender && (
+              <Text style={styles.error}>{errors.gender}</Text>
+            )}
 
             <Text style={styles.label}>Mobile</Text>
             <TextInput
               style={styles.input}
               keyboardType="phone-pad"
-              onChangeText={handleChange('mobile')}
-              onBlur={handleBlur('mobile')}
+              onChangeText={handleChange("mobile")}
+              onBlur={handleBlur("mobile")}
               value={values.mobile}
               placeholder="Enter mobile number"
             />
-            {touched.mobile && errors.mobile && <Text style={styles.error}>{errors.mobile}</Text>}
+            {touched.mobile && errors.mobile && (
+              <Text style={styles.error}>{errors.mobile}</Text>
+            )}
 
             <Text style={styles.label}>Email</Text>
             <TextInput
               style={styles.input}
               keyboardType="email-address"
-              onChangeText={handleChange('email')}
-              onBlur={handleBlur('email')}
+              onChangeText={handleChange("email")}
+              onBlur={handleBlur("email")}
               value={values.email}
               placeholder="Enter email address"
             />
-            {touched.email && errors.email && <Text style={styles.error}>{errors.email}</Text>}
+            {touched.email && errors.email && (
+              <Text style={styles.error}>{errors.email}</Text>
+            )}
 
             <Text style={styles.label}>Address</Text>
             <TextInput
               style={styles.input}
-              onChangeText={handleChange('address')}
-              onBlur={handleBlur('address')}
+              onChangeText={handleChange("address")}
+              onBlur={handleBlur("address")}
               value={values.address}
               placeholder="Enter address"
             />
-            {touched.address && errors.address && <Text style={styles.error}>{errors.address}</Text>}
+            {touched.address && errors.address && (
+              <Text style={styles.error}>{errors.address}</Text>
+            )}
 
-            <Text style={styles.label}>Joining Date</Text>
-            <TextInput
-              style={styles.input}
-              onChangeText={handleChange('joiningDate')}
-              onBlur={handleBlur('joiningDate')}
-              value={values.joiningDate}
-              placeholder="YYYY-MM-DD"
-            />
-            {touched.joiningDate && errors.joiningDate && <Text style={styles.error}>{errors.joiningDate}</Text>}
-
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Update Customer</Text>
+            <TouchableOpacity
+              style={[
+                styles.submitButton,
+                loading && styles.submitButtonDisabled,
+              ]} // Disable button when loading
+              onPress={handleSubmit}
+              disabled={loading} // Disable button when loading
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.submitButtonText}>Update Customer</Text>
+              )}
             </TouchableOpacity>
           </View>
         )}
@@ -161,11 +206,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     paddingTop: 50,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: "#F8F8F8",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   backButton: {
@@ -173,14 +218,14 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   formContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: "#FFF",
     padding: 20,
     borderRadius: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -188,13 +233,13 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 5,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: "#CCC",
     borderRadius: 8,
     padding: 10,
     marginBottom: 10,
@@ -202,25 +247,29 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#CCC',
+    borderColor: "#CCC",
     borderRadius: 8,
     marginBottom: 10,
   },
   error: {
-    color: 'red',
+    color: "red",
     fontSize: 14,
     marginBottom: 10,
   },
   submitButton: {
-    backgroundColor: '#4B6CB7',
+    backgroundColor: "#4B6CB7",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
+    marginTop: 20,
   },
   submitButtonText: {
-    color: '#FFF',
-    fontWeight: 'bold',
+    color: "#FFF",
+    fontWeight: "bold",
     fontSize: 16,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "#B0C4DE", // Disabled button color
   },
 });
 

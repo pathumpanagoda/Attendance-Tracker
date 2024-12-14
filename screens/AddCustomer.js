@@ -13,6 +13,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { Picker } from '@react-native-picker/picker';
+import { FIREBASE_DB } from '../FirebaseConfig'; // Update the path if needed
+import { collection, addDoc } from 'firebase/firestore';
 
 const AddCustomer = () => {
   const navigation = useNavigation();
@@ -26,37 +28,48 @@ const AddCustomer = () => {
   const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
   const [profileImage, setProfileImage] = useState(null);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) setJoiningDate(selectedDate);
   };
 
-  const openImagePicker = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.cancelled) {
-      setProfileImage(result.uri);
+  const handleAddCustomer = async () => {
+    if (!customerName || !age || !gender || !mobile) {
+      alert("Please fill all the fields.");
+      return;
     }
-  };
 
-  const handleAddCustomer = () => {
-    // Add your logic to save the customer details
-    console.log({
-      customerName,
-      age,
-      gender,
-      mobile,
-      joiningDate,
-      address,
-      email,
-      profileImage,
-    });
+    setLoading(true); // Set loading to true before submitting
+
+    try {
+      const customerData = {
+        customerName,
+        age: parseInt(age), // Ensure age is stored as a number
+        gender,
+        mobile,
+        joiningDate: joiningDate.toISOString(), // Convert date to a string
+        address,
+        email,
+        profileImage, // Store image URI (uploading to Firebase Storage can be added later)
+      };
+
+      // Add data to Firestore
+      const docRef = await addDoc(collection(FIREBASE_DB, 'customers'), customerData);
+      alert(`Customer added successfully`);
+      console.log("Customer added successfully");
+      if (navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        console.log("No screen to go back to.");
+      }
+    } catch (error) {
+      console.error("Error adding customer: ", error);
+      alert("An error occurred while adding the customer.");
+    } finally {
+      setLoading(false); // Set loading to false after the process is complete
+    }
   };
 
   return (
@@ -71,7 +84,7 @@ const AddCustomer = () => {
       </TouchableOpacity>
 
       {/* Upload Picture */}
-      <TouchableOpacity style={styles.imagePicker} onPress={openImagePicker}>
+      <TouchableOpacity style={styles.imagePicker} >
         {profileImage ? (
           <Image source={{ uri: profileImage }} style={styles.profileImage} />
         ) : (
@@ -142,8 +155,12 @@ const AddCustomer = () => {
       />
 
       {/* Add Customer Button */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddCustomer}>
-        <Text style={styles.addButtonText}>Add Customer</Text>
+      <TouchableOpacity
+        style={[styles.addButton, loading && styles.disabledButton]} // Add a style for disabled button
+        onPress={handleAddCustomer}
+        disabled={loading} // Disable the button when loading is true
+      >
+        <Text style={styles.addButtonText}>{loading ? 'Adding...' : 'Add Customer'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -225,6 +242,9 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#A0A0A0', // Change color to indicate disabled state
   },
 });
 
