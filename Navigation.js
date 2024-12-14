@@ -8,8 +8,11 @@ import AddCustomer from "./screens/AddCustomer";
 import ManageCustomers from "./screens/ManageCustomers";
 import CustomerDetails from "./screens/CustomerDetails";
 import EditCustomerDetails from "./screens/EditCustomerDetails";
+import MarkAttendance from "./screens/MarkAttendance";
+import AttendanceHistory from "./screens/AttendanceHistory";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
+
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -41,6 +44,16 @@ function HomeStackGroup() {
         component={EditCustomerDetails}
         options={{ animation: "slide_from_right" }}
         />
+      <HomeStack.Screen
+        name="MarkAttendance"
+        component={MarkAttendance}
+        options={{ animation: "slide_from_right" }}
+      />
+      <HomeStack.Screen
+        name="AttendanceHistory"
+        component={AttendanceHistory}
+        options={{ animation: "slide_from_right" }}
+      />
     </HomeStack.Navigator>
   );
 }

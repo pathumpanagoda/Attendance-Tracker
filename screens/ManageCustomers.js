@@ -184,8 +184,13 @@ const styles = StyleSheet.create({
   customerCard: {
     backgroundColor: '#FFF',
     padding: 15,
-    marginBottom: 2,
+    marginBottom: 5,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   customerInfo: {
     flexDirection: 'row',

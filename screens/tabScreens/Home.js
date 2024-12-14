@@ -74,7 +74,9 @@ const HomeScreen = () => {
           <Text style={styles.time}>08:50 AM</Text>
           <Text style={styles.date}>Monday, 25 Nov 2024</Text>
 
-          <TouchableOpacity style={styles.clockInButton}>
+          <TouchableOpacity style={styles.clockInButton}
+            onPress={() => navigation.navigate('MarkAttendance')}
+          >
             <LinearGradient
               colors={['#C865DA', '#5C99D6']}
               style={styles.gradientButton}
@@ -170,7 +172,9 @@ const HomeScreen = () => {
           <Text style={styles.gridText}>Manage Customers</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.gridButton}>
+        <TouchableOpacity style={styles.gridButton}
+          onPress={() => navigation.navigate('AttendanceHistory')}
+        >
           <FontAwesome5 name="history" size={24} color="#4B6CB7" />
           <Text style={styles.gridText}>Attendance History</Text>
         </TouchableOpacity>
@@ -193,7 +197,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingTop: 50,
     paddingBottom: 120,
-    backgroundColor: '#4B6CB7',
+    backgroundColor: '#004886',
     paddingHorizontal: 20,
   },
   headerContent: {

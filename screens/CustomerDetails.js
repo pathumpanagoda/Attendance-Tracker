@@ -106,7 +106,7 @@ const CustomerDetails = () => {
           <Text style={styles.details}>Mobile: {customer.mobile}</Text>
           <Text style={styles.details}>Email: {customer.email}</Text>
           <Text style={styles.details}>Address: {customer.address}</Text>
-          <Text style={styles.details}>Joining Date: {customer.joiningDate}</Text>
+          <Text style={styles.details}>Joining Date: {new Date(customer.joiningDate).toLocaleDateString()}</Text>
         </View>
       </View>
 
