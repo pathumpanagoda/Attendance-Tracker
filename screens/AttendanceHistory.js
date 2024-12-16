@@ -10,10 +10,10 @@ import {
 } from "react-native";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { FIREBASE_DB } from "../FirebaseConfig";
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { FontAwesome } from '@expo/vector-icons';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { FontAwesome } from "@expo/vector-icons";
 
-const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
+const AttendanceHistory = ({ navigation }) => {
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -26,7 +26,6 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
 
-  // Fetch attendance records from Firebase
   const fetchAttendanceRecords = async () => {
     try {
       const querySnapshot = await getDocs(collection(FIREBASE_DB, "attendance"));
@@ -35,7 +34,7 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
         ...doc.data(),
       }));
       setAttendanceRecords(records);
-      setFilteredRecords(records); // Initially set filtered records to all records
+      setFilteredRecords(records);
     } catch (error) {
       console.error("Error fetching attendance records:", error);
       Alert.alert("Error", "Failed to load attendance records.");
@@ -44,7 +43,6 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
     }
   };
 
-  // Filter records by date range and search text
   const filterRecords = () => {
     const filtered = attendanceRecords.filter((item) => {
       const recordDate = new Date(item.date);
@@ -57,24 +55,21 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
     setFilteredRecords(filtered);
   };
 
-  // Handle search text change
   const handleSearchChange = (text) => {
     setSearchText(text);
-    filterRecords(); // Re-filter records when search text changes
+    filterRecords();
   };
 
-  // Handle date range change
   const handleDateChange = (type, selectedDate) => {
-    if (type === 'start') {
+    if (type === "start") {
       setStartDate(selectedDate || startDate);
       fetchStats(selectedDate || startDate, endDate);
-    } else if (type === 'end') {
+    } else if (type === "end") {
       setEndDate(selectedDate || endDate);
       fetchStats(startDate, selectedDate || endDate);
     }
   };
 
-  // Handle delete of a specific record
   const handleDelete = (id) => {
     Alert.alert(
       "Delete Record",
@@ -108,20 +103,80 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
   }, []);
 
   useEffect(() => {
-    filterRecords(); // Re-filter records when the search text or date range changes
+    filterRecords();
   }, [attendanceRecords, searchText, startDate, endDate]);
 
   const renderItem = ({ item }) => (
-    <View style={styles.recordContainer}>
-      <Text style={styles.recordText}>Customer: {item.customer}</Text>
-      <Text style={styles.recordText}>Service: {item.service}</Text>
-      <Text style={styles.recordText}>Amount: Rs. {item.amount}</Text>
-      <Text style={styles.recordText}>Date: {new Date(item.date).toLocaleDateString()}</Text>
+    <View style={styles.cardContainer}>
+      <Text style={styles.dateText2}>
+        {new Date(item.date).toLocaleDateString()} (
+        {new Date(item.date).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+        )
+      </Text>
+
+      <View style={styles.cardDetails}>
+        <View style={styles.row}>
+          <Text style={styles.label}>Service:</Text>
+          <Text style={styles.value}>{item.service}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Customer:</Text>
+          <Text style={styles.value}>{item.customer}</Text>
+        </View>
+
+        <View style={styles.row}>
+          <Text style={styles.label}>Amount:</Text>
+          <Text
+            style={[
+              styles.value,
+              { color: item.status === "Won" ? "green" : "red" },
+            ]}
+          >
+            Rs. {item.amount}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.statusContainer}>
+        <Text
+          style={[
+            styles.statusText,
+            { color: item.status === "Won" ? "green" : "red" },
+          ]}
+        >
+          {item.status}
+        </Text>
+      </View>
+
+      {/* Three Dot Icon for Edit/Delete */}
       <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDelete(item.id)} // Call handleDelete on button press
+        onPress={() =>
+          Alert.alert(
+            "Options",
+            "Choose an action",
+            [
+              {
+                text: "Edit",
+                onPress: () => {
+                  // Navigate to UpdateAttendance page with the item ID
+                  navigation.navigate('UpdateAttendance', { recordId: item.id });
+                
+              },              },
+              {
+                text: "Delete",
+                onPress: () => handleDelete(item.id),
+              },
+            ],
+            { cancelable: true }
+          )
+        }
+        style={styles.threeDotIcon}
       >
-        <Text style={styles.deleteButtonText}>Delete</Text>
+        <FontAwesome name="ellipsis-v" size={20} color="black" />
       </TouchableOpacity>
     </View>
   );
@@ -129,11 +184,10 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
   return (
     <View style={styles.container}>
       <View style={styles.whiteContainer}>
-        {/* Header with Back Button and Title */}
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()} // Navigate back
+            onPress={() => navigation.goBack()}
           >
             <FontAwesome name="arrow-left" size={24} color="#4B6CB7" />
           </TouchableOpacity>
@@ -141,7 +195,6 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
           <Text style={styles.title}>Attendance History</Text>
         </View>
 
-        {/* Date Filter and Search Bar */}
         <View style={styles.searchSortContainer}>
           <TextInput
             style={styles.searchInput}
@@ -151,10 +204,11 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
           />
         </View>
 
-        {/* Date Pickers */}
         <View style={styles.datePickerContainer}>
           <TouchableOpacity onPress={() => setShowStartPicker(true)}>
-            <Text style={styles.dateText}>Start Date: {startDate.toLocaleDateString()}</Text>
+            <Text style={styles.dateText}>
+              Start Date: {startDate.toLocaleDateString()}
+            </Text>
           </TouchableOpacity>
           {showStartPicker && (
             <DateTimePicker
@@ -169,7 +223,9 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
           )}
 
           <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-            <Text style={styles.dateText}>End Date: {endDate.toLocaleDateString()}</Text>
+            <Text style={styles.dateText}>
+              End Date: {endDate.toLocaleDateString()}
+            </Text>
           </TouchableOpacity>
           {showEndPicker && (
             <DateTimePicker
@@ -192,7 +248,9 @@ const AttendanceHistory = ({ navigation }) => { // Accept navigation prop
           data={filteredRecords}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          ListEmptyComponent={<Text style={styles.emptyText}>No records found.</Text>}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No records found.</Text>
+          }
         />
       )}
     </View>
@@ -228,30 +286,57 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "ledt",
   },
-  recordContainer: {
-    backgroundColor: "#FFF",
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 5,
+  cardContainer: {
     borderWidth: 1,
     borderColor: "#DDD",
+    borderRadius: 10,
+    padding: 15,
+    paddingBottom: 0,
+    marginVertical: 5,
+    marginHorizontal: 5,
+    backgroundColor: "#FFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  recordText: {
-    fontSize: 16,
-    color: "#555",
+  dateText2: {
+    fontSize: 14,
+    color: "#5DA646",
+    marginBottom: 10,
+  },
+  cardDetails: {
+    flexDirection: "column",
+    marginBottom: 0,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 5,
   },
-  deleteButton: {
-    backgroundColor: "#E63946",
-    padding: 10,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 10,
+  label: {
+    fontSize: 16,
+    color: "#555",
+    fontWeight: "bold",
   },
-  deleteButtonText: {
-    color: "#FFF",
+  value: {
+    fontSize: 16,
+    color: "#333",
+  },
+  statusContainer: {
+    alignItems: "flex-end",
+  },
+  statusText: {
     fontSize: 14,
     fontWeight: "bold",
+    textTransform: "capitalize",
+  },
+  threeDotIcon: {
+    position: "absolute",
+    top: 15,
+    right: 0,
+    paddingHorizontal: 20,
   },
   loadingText: {
     fontSize: 18,

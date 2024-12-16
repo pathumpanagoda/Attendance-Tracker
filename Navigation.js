@@ -10,6 +10,8 @@ import CustomerDetails from "./screens/CustomerDetails";
 import EditCustomerDetails from "./screens/EditCustomerDetails";
 import MarkAttendance from "./screens/MarkAttendance";
 import AttendanceHistory from "./screens/AttendanceHistory";
+import UpdateAttendance from "./screens/UpdateAttendance";
+import InsightsPage from "./screens/InsightsPage";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -52,6 +54,16 @@ function HomeStackGroup() {
       <HomeStack.Screen
         name="AttendanceHistory"
         component={AttendanceHistory}
+        options={{ animation: "slide_from_right" }}
+      />
+      <HomeStack.Screen
+        name="UpdateAttendance"
+        component={UpdateAttendance}
+        options={{ animation: "slide_from_right" }}
+      />
+      <HomeStack.Screen
+        name="InsightsPage"
+        component={InsightsPage}
         options={{ animation: "slide_from_right" }}
       />
     </HomeStack.Navigator>

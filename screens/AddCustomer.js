@@ -80,7 +80,7 @@ const AddCustomer = () => {
         onPress={() => navigation.goBack()}
       >
         <FontAwesome name="arrow-left" size={24} color="#4B6CB7" />
-        <Text style={styles.backButtonText}>Back</Text>
+        <Text style={styles.backButtonText}>Add New Customer</Text>
       </TouchableOpacity>
 
       {/* Upload Picture */}
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#F0F4F8',
     paddingTop: 50,
   },
   backButton: {
@@ -180,8 +180,9 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     marginLeft: 8,
-    fontSize: 16,
+    fontSize: 20,
     color: '#555',
+    fontWeight: 'bold',
   },
   imagePicker: {
     alignSelf: 'center',

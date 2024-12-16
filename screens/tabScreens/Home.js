@@ -179,9 +179,11 @@ const HomeScreen = () => {
           <Text style={styles.gridText}>Attendance History</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.gridButton}>
+        <TouchableOpacity style={styles.gridButton}
+          onPress={() => navigation.navigate('InsightsPage')}
+        >
           <FontAwesome5 name="chart-bar" size={24} color="#4B6CB7" />
-          <Text style={styles.gridText}>Insight</Text>
+          <Text style={styles.gridText}>Analytics</Text>
         </TouchableOpacity>
       </View>
       </ScrollView>
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
   headerContainer: {
     paddingTop: 50,
     paddingBottom: 120,
-    backgroundColor: '#004886',
+    backgroundColor: '#536bb3',
     paddingHorizontal: 20,
   },
   headerContent: {
