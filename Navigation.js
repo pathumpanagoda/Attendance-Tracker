@@ -79,11 +79,13 @@ function TabGroup() {
           let iconName;
           if (route.name === "Home") {
             iconName = focused ? "home" : "home-outline";
-          } else if (route.name === "Settings") {
+          } 
+          else if (route.name === "Settings") {
             iconName = focused ? "settings" : "settings-outline";
-          } else if (route.name === "Reports") {
-            iconName = focused ? "document-text" : "document-text-outline";
-          }
+          } 
+          // else if (route.name === "Reports") {
+          //   iconName = focused ? "document-text" : "document-text-outline";
+          // }
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         headerShown: false,
@@ -95,7 +97,7 @@ function TabGroup() {
         component={Home}
         options={{ headerShown: false, tabBarLabel: "Home" }}
       />
-      <Tab.Screen name="Reports" component={Reports} />
+      {/* <Tab.Screen name="Reports" component={Reports} /> */}
       <Tab.Screen name="Settings" component={Settings} />
     </Tab.Navigator>
   );
