@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  RefreshControl, // Import RefreshControl
 } from 'react-native';
 import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,60 +14,111 @@ import { useNavigation } from '@react-navigation/native';
 import HandImg from "../../assets/hand.png";
 import CutImg2 from "../../assets/cut3.png";
 import DateTimePicker from '@react-native-community/datetimepicker';
-
+import { collection, getDocs } from 'firebase/firestore';
+import { FIREBASE_DB } from '../../FirebaseConfig';
+import { useFocusEffect } from '@react-navigation/native';
 
 const HomeScreen = () => {
-
   const navigation = useNavigation();
-
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-   // State for date range and stats
-   const [startDate, setStartDate] = useState(startOfMonth);
-   const [endDate, setEndDate] = useState(today);
-   const [showStartPicker, setShowStartPicker] = useState(false);
-   const [showEndPicker, setShowEndPicker] = useState(false);
- 
-   const [totalEarnings, setTotalEarnings] = useState(5000); // Mock value
-   const [totalAttendance, setTotalAttendance] = useState(25); // Mock value
- 
-   const fetchStats = (start, end) => {
-     // Simulate fetching stats based on selected date range
-     // Replace this logic with API calls to fetch actual stats
-     setTotalEarnings(Math.random() * 10000); // Example: Random earnings
-     setTotalAttendance(Math.floor(Math.random() * 50)); // Example: Random attendance
-   };
- 
-   const handleDateChange = (type, selectedDate) => {
-     if (type === 'start') {
-       setStartDate(selectedDate || startDate);
-       fetchStats(selectedDate || startDate, endDate);
-     } else if (type === 'end') {
-       setEndDate(selectedDate || endDate);
-       fetchStats(startDate, selectedDate || endDate);
-     }
-   };
+  // State for date range and stats
+  const [startDate, setStartDate] = useState(startOfMonth);
+  const [endDate, setEndDate] = useState(today);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [totalAttendance, setTotalAttendance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false); // State for manual refresh
+
+  // Fetch attendance data from Firebase
+  const fetchAttendanceRecords = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(FIREBASE_DB, 'attendance'));
+      const records = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      calculateAnalytics(records);
+    } catch (error) {
+      console.error('Error fetching attendance records:', error);
+      Alert.alert('Error', 'Failed to load attendance records.');
+    }
+  };
+
+  // Calculate total earnings and attendance
+  const calculateAnalytics = (records) => {
+    const totalAttendance = records.length;
+    let totalEarnings = 0;
+
+    records.forEach((record) => {
+      totalEarnings += parseFloat(record.amount);
+    });
+
+    console.log("Total Attendance:", totalAttendance);
+    console.log("Total Earnings:", totalEarnings);
+
+    // Update the state
+    setTotalEarnings(totalEarnings);
+    setTotalAttendance(totalAttendance);
+  };
+
+  // Refresh handler
+  const handleRefresh = async () => {
+    setIsRefreshing(true); // Show loading indicator
+    await fetchAttendanceRecords(); // Fetch fresh data
+    setIsRefreshing(false); // Hide loading indicator
+  };
+
+  // Fetch the records when the component is mounted
+  useEffect(() => {
+    fetchAttendanceRecords();
+  }, []);
+
+  const handleDateChange = (type, selectedDate) => {
+    if (type === 'start') {
+      setStartDate(selectedDate || startDate);
+    } else if (type === 'end') {
+      setEndDate(selectedDate || endDate);
+    }
+  };
+
+  // UseFocusEffect triggers the fetch function when the screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchAttendanceRecords();
+    }, [])
+  );
+
   return (
     <View style={styles.container}>
       {/* Header Section */}
       <View style={styles.headerContainer}>
-  <View style={styles.headerContent}>
-    <View style={styles.headerLeft}>
-      <Image source={CutImg2} style={{ width: 60, height: 60, marginRight: 10, borderBottomRightRadius: 50, borderBottomLeftRadius: 50, }} />
-      <View>
-        <Text style={styles.title}>Danu Salon</Text>
-        <Text style={styles.subtitle}>Welcome back!</Text>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <Image
+              source={CutImg2}
+              style={{
+                width: 60,
+                height: 60,
+                marginRight: 10,
+                borderBottomRightRadius: 50,
+                borderBottomLeftRadius: 50,
+              }}
+            />
+            <View>
+              <Text style={styles.title}>Danu Salon</Text>
+              <Text style={styles.subtitle}>Welcome back!</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.notificationIcon}>
+            <MaterialCommunityIcons name="bell" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-    <TouchableOpacity style={styles.notificationIcon}>
-      <MaterialCommunityIcons name="bell" size={24} color="white" />
-    </TouchableOpacity>
-  </View>
-</View>
 
-
-      
       {/* Container */}
       <View style={styles.sectionContainer}>
         {/* Clock Section */}
@@ -74,19 +126,21 @@ const HomeScreen = () => {
           <Text style={styles.time}>08:50 AM</Text>
           <Text style={styles.date}>Monday, 25 Nov 2024</Text>
 
-          <TouchableOpacity style={styles.clockInButton}
+          <TouchableOpacity
+            style={styles.clockInButton}
             onPress={() => navigation.navigate('MarkAttendance')}
           >
             <LinearGradient
               colors={['#C865DA', '#5C99D6']}
               style={styles.gradientButton}
             >
-              <Image source={HandImg} style={{width: 90, height: 80}} />
+              <Image source={HandImg} style={{ width: 90, height: 80 }} />
               <Text style={styles.clockInText}>CHECK IN</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
-             {/* Vertical Line */}
+
+        {/* Vertical Line */}
         <View style={styles.verticalLineContainer}>
           <View style={styles.verticalLine} />
           <View style={styles.dateRangeContainer}>
@@ -152,40 +206,47 @@ const HomeScreen = () => {
           }}
         />
       )}
-   
-    
 
-      {/* Button Grid Section */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={styles.gridContainer}>
-        <TouchableOpacity style={styles.gridButton}
-          onPress={() => navigation.navigate('AddCustomer')}
-        >
-          <FontAwesome5 name="user-plus" size={24} color="#4B6CB7" />
-          <Text style={styles.gridText}>Add Customer</Text>
-        </TouchableOpacity>
+      {/* Scrollable Grid Section with Refresh Control */}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
+        }
+      >
+        <View style={styles.gridContainer}>
+          <TouchableOpacity
+            style={styles.gridButton}
+            onPress={() => navigation.navigate('AddCustomer')}
+          >
+            <FontAwesome5 name="user-plus" size={24} color="#4B6CB7" />
+            <Text style={styles.gridText}>Add Customer</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.gridButton}
-          onPress={() => navigation.navigate('ManageCustomers')}
-        >
-          <FontAwesome5 name="users" size={24} color="#4B6CB7" />
-          <Text style={styles.gridText}>Manage Customers</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.gridButton}
+            onPress={() => navigation.navigate('ManageCustomers')}
+          >
+            <FontAwesome5 name="users" size={24} color="#4B6CB7" />
+            <Text style={styles.gridText}>Manage Customers</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.gridButton}
-          onPress={() => navigation.navigate('AttendanceHistory')}
-        >
-          <FontAwesome5 name="history" size={24} color="#4B6CB7" />
-          <Text style={styles.gridText}>Attendance History</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.gridButton}
+            onPress={() => navigation.navigate('AttendanceHistory')}
+          >
+            <FontAwesome5 name="history" size={24} color="#4B6CB7" />
+            <Text style={styles.gridText}>Attendance History</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.gridButton}
-          onPress={() => navigation.navigate('InsightsPage')}
-        >
-          <FontAwesome5 name="chart-bar" size={24} color="#4B6CB7" />
-          <Text style={styles.gridText}>Analytics</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.gridButton}
+            onPress={() => navigation.navigate('InsightsPage')}
+          >
+            <FontAwesome5 name="chart-bar" size={24} color="#4B6CB7" />
+            <Text style={styles.gridText}>Analytics</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
