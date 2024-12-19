@@ -22,6 +22,7 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
   // State for date range and stats
   const [startDate, setStartDate] = useState(startOfMonth);
@@ -33,6 +34,29 @@ const HomeScreen = () => {
   const [totalAttendance, setTotalAttendance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false); // State for manual refresh
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 30000);
+
+    // Cleanup the interval when the component unmounts
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  // Custom time formatting function
+  const formatTime = () => {
+    const hours = currentDateTime.getHours();
+    const minutes = currentDateTime.getMinutes();
+
+    // Convert to 12-hour format
+    const formattedHours = hours % 12 || 12;
+    const paddedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    return `${formattedHours}:${paddedMinutes} ${ampm}`;
+  };
   // Fetch attendance data from Firebase
   const fetchAttendanceRecords = async () => {
     try {
@@ -122,25 +146,25 @@ const HomeScreen = () => {
       {/* Container */}
       <View style={styles.sectionContainer}>
         {/* Clock Section */}
-        <View style={styles.clockContainer}>
-          <Text style={styles.time}>08:50 AM</Text>
-          <Text style={styles.date}>Monday, 25 Nov 2024</Text>
+          <View style={styles.clockContainer}>
+            <Text style={styles.time}>{formatTime()}</Text>
+            <Text style={styles.date}>{new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' })}</Text>
 
-          <TouchableOpacity
-            style={styles.clockInButton}
-            onPress={() => navigation.navigate('MarkAttendance')}
-          >
-            <LinearGradient
-              colors={['#C865DA', '#5C99D6']}
-              style={styles.gradientButton}
+            <TouchableOpacity
+              style={styles.clockInButton}
+              onPress={() => navigation.navigate('MarkAttendance')}
             >
-              <Image source={HandImg} style={{ width: 90, height: 80 }} />
-              <Text style={styles.clockInText}>CHECK IN</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
+              <LinearGradient
+                colors={['#C865DA', '#5C99D6']}
+                style={styles.gradientButton}
+              >
+                <Image source={HandImg} style={{ width: 90, height: 80 }} />
+                <Text style={styles.clockInText}>CHECK IN</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
-        {/* Vertical Line */}
+          {/* Vertical Line */}
         <View style={styles.verticalLineContainer}>
           <View style={styles.verticalLine} />
           <View style={styles.dateRangeContainer}>

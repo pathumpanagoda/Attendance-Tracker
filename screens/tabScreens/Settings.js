@@ -1,9 +1,28 @@
 import React from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, Button, Alert } from 'react-native';
+import { FIREBASE_AUTH } from '../../FirebaseConfig'; // Import Firebase Auth
+import { signOut } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 const Settings = () => {
     const [isEnabled, setIsEnabled] = React.useState(false);
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
+
+    const navigation = useNavigation();
+
+    const handleLogout = () => {
+        // Firebase sign-out logic
+        signOut(FIREBASE_AUTH)
+            .then(() => {
+                console.log('User logged out');
+                Alert.alert('Logout', 'You have been logged out successfully.');
+                navigation.replace('LoginScreen'); // Navigate to the Login screen
+            })
+            .catch((error) => {
+                console.error('Error logging out:', error);
+                Alert.alert('Error', 'Failed to log out. Please try again.');
+            });
+    };
 
     return (
         <ScrollView style={styles.container}>
@@ -26,8 +45,13 @@ const Settings = () => {
                 <View style={styles.developerInfo}>
                     <Text style={styles.developerText}>Name: Dilshan Pathum</Text>
                     <Text style={styles.developerText}>Email: pathumpanagoda@gmail.com</Text>
-                    <Text style={styles.developerText}>GitHub:  github.com/pathumpanagoda</Text>
+                    <Text style={styles.developerText}>GitHub: github.com/pathumpanagoda</Text>
                 </View>
+            </View>
+
+            {/* Logout Button */}
+            <View style={styles.logoutButton}>
+                <Button title="Logout" onPress={handleLogout} color="#d9534f" />
             </View>
         </ScrollView>
     );
@@ -87,6 +111,16 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#777',
         marginBottom: 5,
+    },
+    logoutButton: {
+        marginTop: 30,
+        padding: 10,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
     },
 });
 

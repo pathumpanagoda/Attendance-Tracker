@@ -12,6 +12,8 @@ import MarkAttendance from "./screens/MarkAttendance";
 import AttendanceHistory from "./screens/AttendanceHistory";
 import UpdateAttendance from "./screens/UpdateAttendance";
 import InsightsPage from "./screens/InsightsPage";
+import LoginScreen from "./screens/(auth)/LoginScreen";
+import SignupScreen from "./screens/(auth)/SignupScreen";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -27,6 +29,12 @@ function HomeStackGroup() {
         headerShown: false,
       }}
     >
+      {/* LoginScreen as the initial screen */}
+      <HomeStack.Screen
+        name="LoginScreen"
+        component={LoginScreen}
+        options={{ animation: "slide_from_right" }}
+      />
       <HomeStack.Screen name="TabGroup" component={TabGroup} />
       <HomeStack.Screen
         name="AddCustomer"
@@ -64,6 +72,11 @@ function HomeStackGroup() {
       <HomeStack.Screen
         name="InsightsPage"
         component={InsightsPage}
+        options={{ animation: "slide_from_right" }}
+      />
+      <HomeStack.Screen
+        name="SignupScreen"
+        component={SignupScreen}
         options={{ animation: "slide_from_right" }}
       />
     </HomeStack.Navigator>
