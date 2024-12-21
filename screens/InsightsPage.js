@@ -10,8 +10,10 @@ import {
 import { collection, getDocs } from "firebase/firestore";
 import { FIREBASE_DB } from "../FirebaseConfig";
 import { FontAwesome } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const Analytics = () => {
+  const navigation = useNavigation();
   const [analytics, setAnalytics] = useState({
     totalAttendance: 0,
     totalCustomers: 0,

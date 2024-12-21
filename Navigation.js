@@ -3,7 +3,6 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "./screens/tabScreens/Home";
 import Settings from "./screens/tabScreens/Settings";
-import Reports from "./screens/tabScreens/Reports";
 import AddCustomer from "./screens/AddCustomer";
 import ManageCustomers from "./screens/ManageCustomers";
 import CustomerDetails from "./screens/CustomerDetails";
@@ -33,51 +32,51 @@ function HomeStackGroup() {
       <HomeStack.Screen
         name="LoginScreen"
         component={LoginScreen}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "fade" }}
       />
       <HomeStack.Screen name="TabGroup" component={TabGroup} />
       <HomeStack.Screen
         name="AddCustomer"
         component={AddCustomer}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen name="ManageCustomers" component={ManageCustomers}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
        <HomeStack.Screen
         name="CustomerDetails"
         component={CustomerDetails}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen
         name="EditCustomerDetails"
         component={EditCustomerDetails}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
         />
       <HomeStack.Screen
         name="MarkAttendance"
         component={MarkAttendance}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen
         name="AttendanceHistory"
         component={AttendanceHistory}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen
         name="UpdateAttendance"
         component={UpdateAttendance}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen
         name="InsightsPage"
         component={InsightsPage}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "simple_push" }}
       />
       <HomeStack.Screen
         name="SignupScreen"
         component={SignupScreen}
-        options={{ animation: "slide_from_right" }}
+        options={{ animation: "fade" }}
       />
     </HomeStack.Navigator>
   );
@@ -108,10 +107,10 @@ function TabGroup() {
       <Tab.Screen
         name="Home"
         component={Home}
-        options={{ headerShown: false, tabBarLabel: "Home" }}
+        options={{ headerShown: false, tabBarLabel: "Home", animation: "fade" }}
       />
       {/* <Tab.Screen name="Reports" component={Reports} /> */}
-      <Tab.Screen name="Settings" component={Settings} />
+      <Tab.Screen name="Settings" component={Settings} options={{animation:"fade"}} />
     </Tab.Navigator>
   );
 }
